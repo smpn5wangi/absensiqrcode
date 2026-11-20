@@ -2,10 +2,8 @@
 const DEFAULT_SUPABASE_URL = "https://uoftrgobgnesscvorbzg.supabase.co";
 const DEFAULT_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVvZnRyZ29iZ25lc3Njdm9yYnpnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTUxODQ3MTMsImV4cCI6MjExMDc2MDcxM30.GL_JQrFJv6Td0WpnNLU3o6WWYrDzVq7ALMcbOFQIhwg";
 
-if (!localStorage.getItem("SUPABASE_URL")) {
+if (localStorage.getItem("SUPABASE_URL") !== DEFAULT_SUPABASE_URL) {
   localStorage.setItem("SUPABASE_URL", DEFAULT_SUPABASE_URL);
-}
-if (!localStorage.getItem("SUPABASE_ANON_KEY")) {
   localStorage.setItem("SUPABASE_ANON_KEY", DEFAULT_SUPABASE_ANON_KEY);
 }
 

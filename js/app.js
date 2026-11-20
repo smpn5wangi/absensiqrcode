@@ -819,11 +819,32 @@ async function saveNewStudentToDB() {
   const newStudentLocal = { id_siswa: idSiswa, nisn: nisn || "-", nama: nama, kelas: kelas, ttl: ttl || "-", active: true };
   const tx = db.transaction("students", "readwrite");
   tx.objectStore("students").put(newStudentLocal);
+
   tx.oncomplete = async () => {
-    alert("Siswa baru berhasil disimpan!");
+    if (navigator.onLine) {
+      const newStudentSupabase = {
+        ID_SISWA: idSiswa,
+        NISN: nisn || "-",
+        NAMA_SISWA: nama,
+        KELAS: kelas,
+        TTL: ttl || "-",
+        STATUS: "Aktif",
+        QR_CODE_KEY: idSiswa
+      };
+      const { error } = await supabaseClient.from('siswa').upsert([newStudentSupabase]);
+      if (error) {
+        alert("Tersimpan di HP, tetapi GAGAL masuk ke database Supabase: " + error.message);
+      } else {
+        alert("Siswa baru berhasil disimpan ke HP dan Database Server!");
+      }
+    } else {
+      alert("Perangkat offline. Siswa tersimpan di memori HP.");
+    }
+
     toggleAddStudentModal();
     loadStudentsView();
   };
+}
 
   if (navigator.onLine) {
     const newStudentSupabase = {

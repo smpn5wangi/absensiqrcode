@@ -22,7 +22,7 @@ async function autoDownloadMasterStudents(targetDateStr) {
       .eq('TANGGAL', targetDateStr);
 
     const { data: timeData } = await supabaseClient.from('pengaturan_waktu').select('*');
-    if (timeData && Array.isArray(timeData)) {
+    if (timeData && Array.isArray(timeData) && timeData.length > 0) {
       const timeObj = {};
       timeData.forEach(t => {
         const k = t.kunci_waktu || t.KUNCI_WAKTU;
@@ -33,19 +33,37 @@ async function autoDownloadMasterStudents(targetDateStr) {
     }
 
     const { data: configData } = await supabaseClient.from('pengaturan').select('*');
-    if (configData && Array.isArray(configData)) {
+    if (configData && Array.isArray(configData) && configData.length > 0) {
       const cfgMap = {};
       configData.forEach(c => {
         const k = c.kunci || c.KUNCI;
         const v = c.nilai || c.NILAI;
         if (k) cfgMap[k] = v;
       });
-      const schoolName = cfgMap.SCHOOL_NAME || "SMK Negeri 1 Wakatobi";
-      const academicYear = cfgMap.ACADEMIC_YEAR || "2025/2026";
-      localStorage.setItem("SCHOOL_NAME", schoolName);
-      localStorage.setItem("ACADEMIC_YEAR", academicYear);
-      const headerEl = document.getElementById("app-header-school-name");
-      if (headerEl) headerEl.innerText = `${schoolName} (${academicYear})`;
+
+      const schoolName = cfgMap.SCHOOL_NAME || localStorage.getItem("SCHOOL_NAME") || "";
+      const academicYear = cfgMap.ACADEMIC_YEAR || localStorage.getItem("ACADEMIC_YEAR") || "2026/2027";
+      const principalName = cfgMap.PRINCIPAL_NAME || localStorage.getItem("PRINCIPAL_NAME") || "";
+      const principalNip = cfgMap.PRINCIPAL_NIP || localStorage.getItem("PRINCIPAL_NIP") || "";
+
+      if (schoolName) {
+        localStorage.setItem("SCHOOL_NAME", schoolName);
+        localStorage.setItem("ACADEMIC_YEAR", academicYear);
+        localStorage.setItem("PRINCIPAL_NAME", principalName);
+        localStorage.setItem("PRINCIPAL_NIP", principalNip);
+
+        const headerEl = document.getElementById("app-header-school-name");
+        const nameInput = document.getElementById("input-school-name");
+        const yearInput = document.getElementById("input-academic-year");
+        const prinNameInput = document.getElementById("input-principal-name");
+        const prinNipInput = document.getElementById("input-principal-nip");
+
+        if (headerEl) headerEl.innerText = `${schoolName} (${academicYear})`;
+        if (nameInput) nameInput.value = schoolName;
+        if (yearInput) yearInput.value = academicYear;
+        if (prinNameInput) prinNameInput.value = principalName;
+        if (prinNipInput) prinNipInput.value = principalNip;
+      }
     }
 
     if (studentsData && Array.isArray(studentsData)) {

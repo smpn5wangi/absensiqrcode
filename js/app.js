@@ -393,10 +393,21 @@ async function saveDaysTimeSettings() {
         kunci_waktu: k,
         nilai: timeSettingsToSave[k]
       }));
-      await supabaseClient.from('pengaturan_waktu').upsert(settingsArray);
-      alert("Pengaturan jam tersimpan di Server!");
-    } catch (e) { alert("Pengaturan tersimpan lokal."); }
-  } else alert("Perangkat offline. Tersimpan di HP ini.");
+      const { error } = await supabaseClient
+        .from('pengaturan_waktu')
+        .upsert(settingsArray, { onConflict: 'kunci_waktu' });
+
+      if (error) {
+        alert("Tersimpan lokal, tetapi GAGAL menyimpan ke Server: " + error.message);
+      } else {
+        alert("Pengaturan jam berhasil tersimpan di Database Server!");
+      }
+    } catch (e) {
+      alert("Pengaturan tersimpan lokal.");
+    }
+  } else {
+    alert("Perangkat offline. Tersimpan di HP ini.");
+  }
 }
 
 function applyTimeSettingsFromCloud(timeObj) {
@@ -704,7 +715,12 @@ async function saveHariLiburNew() {
   renderHariLiburView();
 
   if (navigator.onLine) {
-    await supabaseClient.from('hari_libur').upsert([newItem]);
+    const { error } = await supabaseClient.from('hari_libur').upsert([newItem], { onConflict: 'TANGGAL' });
+    if (error) {
+      alert("Tersimpan lokal, gagal simpan hari libur ke server: " + error.message);
+    } else {
+      alert("Hari libur tersimpan di Database Server!");
+    }
   }
 }
 
@@ -722,15 +738,28 @@ async function saveSchoolSettings() {
   document.getElementById("app-header-school-name").innerText = `${schoolName} (${academicYear})`;
 
   if (navigator.onLine) {
-    const schoolSettingsArray = [
-      { kunci: 'SCHOOL_NAME', nilai: schoolName },
-      { kunci: 'ACADEMIC_YEAR', nilai: academicYear },
-      { kunci: 'PRINCIPAL_NAME', nilai: principalName },
-      { kunci: 'PRINCIPAL_NIP', nilai: principalNip }
-    ];
-    await supabaseClient.from('pengaturan').upsert(schoolSettingsArray);
+    try {
+      const schoolSettingsArray = [
+        { kunci: 'SCHOOL_NAME', nilai: schoolName },
+        { kunci: 'ACADEMIC_YEAR', nilai: academicYear },
+        { kunci: 'PRINCIPAL_NAME', nilai: principalName },
+        { kunci: 'PRINCIPAL_NIP', nilai: principalNip }
+      ];
+      const { error } = await supabaseClient
+        .from('pengaturan')
+        .upsert(schoolSettingsArray, { onConflict: 'kunci' });
+
+      if (error) {
+        alert("Tersimpan lokal, tetapi GAGAL menyimpan identitas sekolah ke Server: " + error.message);
+      } else {
+        alert("Identitas sekolah berhasil tersimpan di Database Server!");
+      }
+    } catch (e) {
+      alert("Identitas sekolah tersimpan lokal.");
+    }
+  } else {
+    alert("Perangkat offline. Identitas sekolah tersimpan di HP ini.");
   }
-  alert("Identitas sekolah tersimpan!");
 }
 
 async function executeMassPromotion() {
@@ -868,14 +897,22 @@ window.onload = async () => {
   updateRoleUI();
 
   const localSchoolName = localStorage.getItem("SCHOOL_NAME");
-  const localAcadYear = localStorage.getItem("ACADEMIC_YEAR") || "2025/2026";
+  const localAcadYear = localStorage.getItem("ACADEMIC_YEAR") || "2026/2027";
+  const localPrincipalName = localStorage.getItem("PRINCIPAL_NAME") || "";
+  const localPrincipalNip = localStorage.getItem("PRINCIPAL_NIP") || "";
+
   if (localSchoolName) {
     const headerEl = document.getElementById("app-header-school-name");
     const nameInput = document.getElementById("input-school-name");
     const yearInput = document.getElementById("input-academic-year");
+    const prinNameInput = document.getElementById("input-principal-name");
+    const prinNipInput = document.getElementById("input-principal-nip");
+
     if (headerEl) headerEl.innerText = `${localSchoolName} (${localAcadYear})`;
     if (nameInput) nameInput.value = localSchoolName;
     if (yearInput) yearInput.value = localAcadYear;
+    if (prinNameInput) prinNameInput.value = localPrincipalName;
+    if (prinNipInput) prinNipInput.value = localPrincipalNip;
   }
   
   const d = new Date();

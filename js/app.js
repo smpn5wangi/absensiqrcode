@@ -843,21 +843,8 @@ async function saveNewStudentToDB() {
 
     toggleAddStudentModal();
     loadStudentsView();
+    populateClassDropdowns();
   };
-}
-
-  if (navigator.onLine) {
-    const newStudentSupabase = {
-      ID_SISWA: idSiswa,
-      NISN: nisn || "-",
-      NAMA_SISWA: nama,
-      KELAS: kelas,
-      TTL: ttl || "-",
-      STATUS: "Aktif",
-      QR_CODE_KEY: idSiswa
-    };
-    await supabaseClient.from('siswa').insert([newStudentSupabase]);
-  }
 }
 
 setInterval(() => {

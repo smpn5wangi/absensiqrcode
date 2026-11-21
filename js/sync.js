@@ -16,10 +16,8 @@ async function autoDownloadMasterStudents(targetDateStr) {
 
   try {
     const { data: studentsData } = await supabaseClient.from('siswa').select('*');
-    const { data: attendanceData } = await supabaseClient
-      .from('absensi_harian')
-      .select('*')
-      .eq('TANGGAL', targetDateStr);
+    const { data: allAttendanceData } = await supabaseClient.from('absensi_harian').select('*');
+    const { data: tlData } = await supabaseClient.from('tindak_lanjut').select('*');
 
     const { data: timeData } = await supabaseClient.from('pengaturan_waktu').select('*');
     if (timeData && Array.isArray(timeData) && timeData.length > 0) {
@@ -103,9 +101,9 @@ async function autoDownloadMasterStudents(targetDateStr) {
       }
     }
 
-    if (attendanceData && Array.isArray(attendanceData)) {
-      fetchedTodayAttendance = attendanceData.map(a => {
-        const tgl = formatCleanDateLocal(a.TANGGAL || a.tanggal || targetDateStr);
+    if (allAttendanceData && Array.isArray(allAttendanceData)) {
+      const normalizedHistory = allAttendanceData.map(a => {
+        const tgl = formatCleanDateLocal(a.TANGGAL || a.tanggal);
         const idS = a.ID_SISWA || a.id_siswa;
         const logId = a.LOG_ID || a.log_id || `${tgl}_${idS}`;
         const stAkhir = a.STATUS_AKHIR || a.status_akhir || a.STATUS_PRESENSI || a.status_presensi || "HADIR";
@@ -124,8 +122,27 @@ async function autoDownloadMasterStudents(targetDateStr) {
           status_presensi: String(stAkhir).toUpperCase()
         };
       });
+
+      fetchedAttendanceHistory = normalizedHistory;
+      fetchedTodayAttendance = normalizedHistory.filter(r => r.tanggal === targetDateStr);
     } else {
+      fetchedAttendanceHistory = [];
       fetchedTodayAttendance = [];
+    }
+
+    if (tlData && Array.isArray(tlData)) {
+      const cloudTLStore = {};
+      tlData.forEach(row => {
+        const idS = String(row.ID_SISWA || row.id_siswa || "").trim();
+        if (idS) {
+          cloudTLStore[idS] = {
+            tanggal: row.TANGGAL || row.tanggal || "",
+            catatan: row.CATATAN || row.catatan || "",
+            kategori: row.KATEGORI || row.kategori || ""
+          };
+        }
+      });
+      localStorage.setItem("TL_STATUS_STORE", JSON.stringify(cloudTLStore));
     }
 
     updateMonitoringDashboard();
